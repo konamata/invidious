@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout current repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Clone Invidious repository
         run: git clone https://github.com/iv-org/invidious.git invidious-source
       - name: Copy Invidious content to current repository
@@ -44,15 +46,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.MY_PAT_TOKEN }}
         run: |
           git tag ${{ steps.get_tag.outputs.LATEST_TAG }}
+          git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} ${{ steps.get_tag.outputs.LATEST_TAG }}
 
   build-arm64:
     runs-on: ARM64
     needs: clone-and-commit
     steps:
-      - name: Checkout repository at the latest tag
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.clone-and-commit.outputs.latest_tag }}
+          fetch-depth: 0
+      - name: Checkout latest tag
+        run: |
+          git fetch --tags
+          git checkout ${{ needs.clone-and-commit.outputs.latest_tag }} || git checkout main
       - name: Print latest tag
         run: echo "LATEST_TAG=${{ needs.clone-and-commit.outputs.latest_tag }}"
       - name: Set up Docker Buildx
@@ -73,13 +80,17 @@ jobs:
             --push .
 
   build-x64:
-    runs-on: gece
+    runs-on: X64
     needs: clone-and-commit
     steps:
-      - name: Checkout repository at the latest tag
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.clone-and-commit.outputs.latest_tag }}
+          fetch-depth: 0
+      - name: Checkout latest tag
+        run: |
+          git fetch --tags
+          git checkout ${{ needs.clone-and-commit.outputs.latest_tag }} || git checkout main
       - name: Print latest tag
         run: echo "LATEST_TAG=${{ needs.clone-and-commit.outputs.latest_tag }}"
       - name: Set up Docker Buildx
@@ -107,6 +118,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: main
+          fetch-depth: 0
       - name: Commit and push changes
         run: |
           git config --global user.email "baris.dogu@icloud.com"
