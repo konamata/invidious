@@ -8,7 +8,7 @@ on:
 
 jobs:
   clone-and-commit:
-    runs-on: vultr
+    runs-on: gece
     outputs:
       latest_tag: ${{ steps.get_tag.outputs.LATEST_TAG }}
     steps:
