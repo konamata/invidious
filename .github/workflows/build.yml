@@ -7,7 +7,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-commit:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check commit message
+        id: check
+        run: |
+          commit_message=$(git log -1 --pretty=%B)
+          if [[ $commit_message == *"[skip ci]"* ]]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+
   clone-and-commit:
+    needs: check-commit
+    if: needs.check-commit.outputs.should_run == 'true'
     runs-on: self-hosted
     outputs:
       latest_tag: ${{ steps.get_tag.outputs.LATEST_TAG }}
@@ -111,7 +128,8 @@ jobs:
             --push .
 
   final-commit:
-    needs: [build-arm64, build-x64]
+    needs: [check-commit, build-arm64, build-x64]
+    if: needs.check-commit.outputs.should_run == 'true'
     runs-on: self-hosted
     steps:
       - name: Checkout main branch
@@ -124,5 +142,5 @@ jobs:
           git config --global user.email "baris.dogu@icloud.com"
           git config --global user.name "bariiss"
           git add .
-          git diff --staged --quiet || git commit -m "Update main repository after successful builds"
+          git diff --staged --quiet || git commit -m "Update main repository after successful builds [skip ci]"
           git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} main
