@@ -7,32 +7,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-commit:
-    runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.check.outputs.should_run }}
-    steps:
-      - name: Check commit message
-        id: check
-        run: |
-          commit_message=$(git log -1 --pretty=%B)
-          if [[ $commit_message == *"[skip ci]"* ]]; then
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          else
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          fi
-
   clone-and-commit:
-    needs: check-commit
-    if: needs.check-commit.outputs.should_run == 'true'
     runs-on: self-hosted
     outputs:
       latest_tag: ${{ steps.get_tag.outputs.LATEST_TAG }}
     steps:
       - name: Checkout current repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Clone Invidious repository
         run: git clone https://github.com/iv-org/invidious.git invidious-source
       - name: Copy Invidious content to current repository
@@ -69,14 +50,10 @@ jobs:
     runs-on: ARM64
     needs: clone-and-commit
     steps:
-      - name: Checkout repository
+      - name: Checkout repository at the latest tag
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-      - name: Checkout latest tag
-        run: |
-          git fetch --tags
-          git checkout ${{ needs.clone-and-commit.outputs.latest_tag }} || git checkout main
+          ref: ${{ needs.clone-and-commit.outputs.latest_tag }}
       - name: Print latest tag
         run: echo "LATEST_TAG=${{ needs.clone-and-commit.outputs.latest_tag }}"
       - name: Set up Docker Buildx
@@ -97,17 +74,13 @@ jobs:
             --push .
 
   build-x64:
-    runs-on: X64
+    runs-on: gece
     needs: clone-and-commit
     steps:
-      - name: Checkout repository
+      - name: Checkout repository at the latest tag
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-      - name: Checkout latest tag
-        run: |
-          git fetch --tags
-          git checkout ${{ needs.clone-and-commit.outputs.latest_tag }} || git checkout main
+          ref: ${{ needs.clone-and-commit.outputs.latest_tag }}
       - name: Print latest tag
         run: echo "LATEST_TAG=${{ needs.clone-and-commit.outputs.latest_tag }}"
       - name: Set up Docker Buildx
@@ -128,19 +101,17 @@ jobs:
             --push .
 
   final-commit:
-    needs: [check-commit, build-arm64, build-x64]
-    if: needs.check-commit.outputs.should_run == 'true'
+    needs: [build-arm64, build-x64]
     runs-on: self-hosted
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v3
         with:
           ref: main
-          fetch-depth: 0
       - name: Commit and push changes
         run: |
           git config --global user.email "baris.dogu@icloud.com"
           git config --global user.name "bariiss"
           git add .
-          git diff --staged --quiet || git commit -m "Update main repository after successful builds [skip ci]"
+          git diff --staged --quiet || git commit -m "Update main repository after successful builds"
           git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} main
