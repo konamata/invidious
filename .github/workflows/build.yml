@@ -8,7 +8,7 @@ on:
 
 jobs:
   clone-and-commit:
-    runs-on: gece
+    runs-on: self-hosted
     outputs:
       latest_tag: ${{ steps.get_tag.outputs.LATEST_TAG }}
     steps:
@@ -47,7 +47,7 @@ jobs:
           git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} ${{ steps.get_tag.outputs.LATEST_TAG }}
 
   build-arm64:
-    runs-on: squidward
+    runs-on: ARM64
     needs: clone-and-commit
     steps:
       - name: Checkout repository at the latest tag
