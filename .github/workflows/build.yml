@@ -32,7 +32,7 @@ jobs:
           cd invidious
           docker buildx create --use
           docker buildx build --platform linux/arm64 \
-            --file master/docker/Dockerfile.arm64 \
+            --file docker/Dockerfile.arm64 \
             --tag ghcr.io/${{ github.repository }}/invidious:arm64-latest \
             --push .
 
@@ -51,7 +51,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
 
       - name: Clone Invidious repository
         run: git clone https://github.com/iv-org/invidious.git
@@ -61,6 +61,6 @@ jobs:
           cd invidious
           docker buildx create --use
           docker buildx build --platform linux/amd64 \
-            --file master/docker/Dockerfile \
+            --file docker/Dockerfile \
             --tag ghcr.io/${{ github.repository }}/invidious:x64-latest \
             --push .
