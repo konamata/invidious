@@ -71,8 +71,8 @@ jobs:
           docker buildx create --use
           docker buildx build --platform linux/arm64 \
             --file docker/Dockerfile.arm64 \
-            --tag ghcr.io/${{ github.repository }}/invidious:${{ env.LATEST_TAG }}-arm64 \
-            --tag ghcr.io/${{ github.repository }}/invidious:latest-arm64 \
+            --tag ghcr.io/${{ github.repository }}:${{ env.LATEST_TAG }}-arm64 \
+            --tag ghcr.io/${{ github.repository }}:latest-arm64 \
             --push .
 
   build-x64:
@@ -94,11 +94,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.MY_PAT_TOKEN }}
 
-      - name: Build and push x64 Docker image with version and latest tags
+      - name: Build and push arm64 Docker image with version and latest tags
         run: |
           docker buildx create --use
           docker buildx build --platform linux/amd64 \
             --file docker/Dockerfile \
-            --tag ghcr.io/${{ github.repository }}/invidious:${{ env.LATEST_TAG }}-x64 \
-            --tag ghcr.io/${{ github.repository }}/invidious:latest-x64 \
+            --tag ghcr.io/${{ github.repository }}:${{ env.LATEST_TAG }}-x64 \
+            --tag ghcr.io/${{ github.repository }}:latest-x64 \
             --push .
