@@ -32,16 +32,20 @@ jobs:
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
       - name: Delete the tag if it exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if git rev-parse ${{ env.LATEST_TAG }} >/dev/null 2>&1; then
             git tag -d ${{ env.LATEST_TAG }}
-            git push origin :refs/tags/${{ env.LATEST_TAG }}
+            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} :refs/tags/${{ env.LATEST_TAG }}
           fi
 
       - name: Create the same tag in the current repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git tag ${{ env.LATEST_TAG }}
-          git push origin ${{ env.LATEST_TAG }}
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} ${{ env.LATEST_TAG }}
 
   build-arm64:
     runs-on: ARM64
