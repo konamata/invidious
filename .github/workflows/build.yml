@@ -74,7 +74,7 @@ jobs:
             --push .
 
   build-x64:
-    runs-on: vultr
+    runs-on: gece
     needs: clone-and-commit
     steps:
       - name: Checkout repository at the latest tag
