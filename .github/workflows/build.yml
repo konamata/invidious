@@ -9,46 +9,42 @@ on:
 jobs:
   clone-and-commit:
     runs-on: self-hosted
+    outputs:
+      latest_tag: ${{ steps.get_tag.outputs.LATEST_TAG }}
     steps:
       - name: Checkout current repository
         uses: actions/checkout@v3
-
       - name: Clone Invidious repository
         run: git clone https://github.com/iv-org/invidious.git invidious-source
-
       - name: Copy Invidious content to current repository
         run: |
           rsync -a invidious-source/ ./
-          git config --global user.email "your-email@example.com"
+          git config --global user.email "devops@xooi.pw"
           git config --global user.name "your-username"
           git add .
           git commit -m "Copied invidious content"
-
       - name: Get latest version tag from Invidious
         id: get_tag
         run: |
           cd invidious-source
           LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1) || echo "v0.0.0")
-          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_OUTPUT
       - name: Print latest tag
-        run: echo "LATEST_TAG=${{ env.LATEST_TAG }}"
-
+        run: echo "LATEST_TAG=${{ steps.get_tag.outputs.LATEST_TAG }}"
       - name: Delete the tag if it exists
         env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT_TOKEN }}
         run: |
-          if git rev-parse ${{ env.LATEST_TAG }} >/dev/null 2>&1; then
-            git tag -d ${{ env.LATEST_TAG }}
-            git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} :refs/tags/${{ env.LATEST_TAG }}
+          if git rev-parse ${{ steps.get_tag.outputs.LATEST_TAG }} >/dev/null 2>&1; then
+            git tag -d ${{ steps.get_tag.outputs.LATEST_TAG }}
+            git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} :refs/tags/${{ steps.get_tag.outputs.LATEST_TAG }}
           fi
-
       - name: Create the same tag in the current repository
         env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT_TOKEN }}
         run: |
-          git tag ${{ env.LATEST_TAG }}
-          git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} ${{ env.LATEST_TAG }}
+          git tag ${{ steps.get_tag.outputs.LATEST_TAG }}
+          git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} ${{ steps.get_tag.outputs.LATEST_TAG }}
 
   build-arm64:
     runs-on: ARM64
@@ -57,27 +53,23 @@ jobs:
       - name: Checkout repository at the latest tag
         uses: actions/checkout@v3
         with:
-          ref: ${{ env.LATEST_TAG }}
-
+          ref: ${{ needs.clone-and-commit.outputs.latest_tag }}
       - name: Print latest tag
-        run: echo "LATEST_TAG=${{ env.LATEST_TAG }}"
-
+        run: echo "LATEST_TAG=${{ needs.clone-and-commit.outputs.latest_tag }}"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.MY_PAT_TOKEN }}
-
       - name: Build and push arm64 Docker image with version and latest tags
         run: |
           docker buildx create --use
           docker buildx build --platform linux/arm64 \
             --file docker/Dockerfile.arm64 \
-            --tag ghcr.io/${{ github.repository }}:${{ env.LATEST_TAG }}-arm64 \
+            --tag ghcr.io/${{ github.repository }}:${{ needs.clone-and-commit.outputs.latest_tag }}-arm64 \
             --tag ghcr.io/${{ github.repository }}:latest-arm64 \
             --push .
 
@@ -88,26 +80,22 @@ jobs:
       - name: Checkout repository at the latest tag
         uses: actions/checkout@v3
         with:
-          ref: ${{ env.LATEST_TAG }}
-
+          ref: ${{ needs.clone-and-commit.outputs.latest_tag }}
       - name: Print latest tag
-        run: echo "LATEST_TAG=${{ env.LATEST_TAG }}"
-
+        run: echo "LATEST_TAG=${{ needs.clone-and-commit.outputs.latest_tag }}"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.MY_PAT_TOKEN }}
-
       - name: Build and push x64 Docker image with version and latest tags
         run: |
           docker buildx create --use
           docker buildx build --platform linux/amd64 \
             --file docker/Dockerfile \
-            --tag ghcr.io/${{ github.repository }}:${{ env.LATEST_TAG }}-x64 \
+            --tag ghcr.io/${{ github.repository }}:${{ needs.clone-and-commit.outputs.latest_tag }}-x64 \
             --tag ghcr.io/${{ github.repository }}:latest-x64 \
             --push .
