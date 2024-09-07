@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - Dockerfile*
   workflow_dispatch:
 
 jobs:
@@ -24,16 +22,17 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.MY_PAT_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download Dockerfile for arm64
-        run: wget https://raw.githubusercontent.com/iv-org/invidious/master/docker/Dockerfile.arm64 -O Dockerfile
+      - name: Clone Invidious repository
+        run: git clone https://github.com/iv-org/invidious.git
 
       - name: Build and push arm64 Docker image
         run: |
+          cd invidious
           docker buildx create --use
           docker buildx build --platform linux/arm64 \
-            --file Dockerfile \
+            --file master/docker/Dockerfile.arm64 \
             --tag ghcr.io/${{ github.repository }}/invidious:arm64-latest \
             --push .
 
@@ -54,13 +53,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download Dockerfile for x64
-        run: wget https://raw.githubusercontent.com/iv-org/invidious/master/docker/Dockerfile -O Dockerfile
+      - name: Clone Invidious repository
+        run: git clone https://github.com/iv-org/invidious.git
 
       - name: Build and push x64 Docker image
         run: |
+          cd invidious
           docker buildx create --use
           docker buildx build --platform linux/amd64 \
-            --file Dockerfile \
+            --file master/docker/Dockerfile \
             --tag ghcr.io/${{ github.repository }}/invidious:x64-latest \
             --push .
