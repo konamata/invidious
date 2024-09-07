@@ -22,10 +22,22 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
 
       - name: Clone Invidious repository
         run: git clone https://github.com/iv-org/invidious.git
+
+      - name: Get latest version tag from Invidious
+        id: get_tag
+        run: |
+          cd invidious
+          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+      - name: Checkout to the latest version tag
+        run: |
+          cd invidious
+          git checkout ${{ env.LATEST_TAG }}
 
       - name: Build and push arm64 Docker image
         run: |
@@ -33,7 +45,7 @@ jobs:
           docker buildx create --use
           docker buildx build --platform linux/arm64 \
             --file docker/Dockerfile.arm64 \
-            --tag ghcr.io/${{ github.repository }}/invidious:arm64-latest \
+            --tag ghcr.io/${{ github.repository }}/invidious:${{ env.LATEST_TAG }}-arm64 \
             --push .
 
   build-x64:
@@ -56,11 +68,23 @@ jobs:
       - name: Clone Invidious repository
         run: git clone https://github.com/iv-org/invidious.git
 
+      - name: Get latest version tag from Invidious
+        id: get_tag
+        run: |
+          cd invidious
+          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+      - name: Checkout to the latest version tag
+        run: |
+          cd invidious
+          git checkout ${{ env.LATEST_TAG }}
+
       - name: Build and push x64 Docker image
         run: |
           cd invidious
           docker buildx create --use
           docker buildx build --platform linux/amd64 \
             --file docker/Dockerfile \
-            --tag ghcr.io/${{ github.repository }}/invidious:x64-latest \
+            --tag ghcr.io/${{ github.repository }}/invidious:${{ env.LATEST_TAG }}-x64 \
             --push .
