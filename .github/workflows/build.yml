@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Clone, Commit, Tag, and Build Docker Images
 
 on:
   push:
@@ -7,12 +7,43 @@ on:
   workflow_dispatch:
 
 jobs:
+  clone-and-commit:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v3
+
+      - name: Clone Invidious repository
+        run: git clone https://github.com/iv-org/invidious.git invidious-source
+
+      - name: Copy Invidious content to current repository
+        run: |
+          rsync -a invidious-source/ ./
+          git config --global user.email "your-email@example.com"
+          git config --global user.name "your-username"
+          git add .
+          git commit -m "Copied invidious content"
+
+      - name: Get latest version tag from Invidious
+        id: get_tag
+        run: |
+          cd invidious-source
+          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+      - name: Create the same tag in the current repository
+        run: |
+          git tag ${{ env.LATEST_TAG }}
+          git push origin ${{ env.LATEST_TAG }}
+
   build-arm64:
     runs-on: ARM64
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
+    needs: clone-and-commit
     steps:
-      - name: Checkout repository
+      - name: Checkout repository at the latest tag
         uses: actions/checkout@v3
+        with:
+          ref: ${{ env.LATEST_TAG }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -24,36 +55,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.MY_PAT_TOKEN }}
 
-      - name: Clone Invidious repository
-        run: git clone https://github.com/iv-org/invidious.git
-
-      - name: Get latest version tag from Invidious
-        id: get_tag
+      - name: Build and push arm64 Docker image with version and latest tags
         run: |
-          cd invidious
-          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-
-      - name: Checkout to the latest version tag
-        run: |
-          cd invidious
-          git checkout ${{ env.LATEST_TAG }}
-
-      - name: Build and push arm64 Docker image
-        run: |
-          cd invidious
           docker buildx create --use
           docker buildx build --platform linux/arm64 \
             --file docker/Dockerfile.arm64 \
             --tag ghcr.io/${{ github.repository }}/invidious:${{ env.LATEST_TAG }}-arm64 \
+            --tag ghcr.io/${{ github.repository }}/invidious:latest-arm64 \
             --push .
 
   build-x64:
     runs-on: X64
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
+    needs: clone-and-commit
     steps:
-      - name: Checkout repository
+      - name: Checkout repository at the latest tag
         uses: actions/checkout@v3
+        with:
+          ref: ${{ env.LATEST_TAG }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -65,26 +83,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.MY_PAT_TOKEN }}
 
-      - name: Clone Invidious repository
-        run: git clone https://github.com/iv-org/invidious.git
-
-      - name: Get latest version tag from Invidious
-        id: get_tag
+      - name: Build and push x64 Docker image with version and latest tags
         run: |
-          cd invidious
-          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-
-      - name: Checkout to the latest version tag
-        run: |
-          cd invidious
-          git checkout ${{ env.LATEST_TAG }}
-
-      - name: Build and push x64 Docker image
-        run: |
-          cd invidious
           docker buildx create --use
           docker buildx build --platform linux/amd64 \
             --file docker/Dockerfile \
             --tag ghcr.io/${{ github.repository }}/invidious:${{ env.LATEST_TAG }}-x64 \
+            --tag ghcr.io/${{ github.repository }}/invidious:latest-x64 \
             --push .
