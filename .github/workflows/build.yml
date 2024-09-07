@@ -8,7 +8,7 @@ on:
 
 jobs:
   clone-and-commit:
-    runs-on: self-hosted
+    runs-on: vultr
     outputs:
       latest_tag: ${{ steps.get_tag.outputs.LATEST_TAG }}
     steps:
@@ -19,8 +19,8 @@ jobs:
       - name: Copy Invidious content to current repository
         run: |
           rsync -a invidious-source/ ./
-          git config --global user.email "devops@xooi.pw"
-          git config --global user.name "your-username"
+          git config --global user.email "baris.dogu@icloud.com"
+          git config --global user.name "bariiss"
           git add .
           git commit -m "Copied invidious content"
       - name: Get latest version tag from Invidious
@@ -47,7 +47,7 @@ jobs:
           git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} ${{ steps.get_tag.outputs.LATEST_TAG }}
 
   build-arm64:
-    runs-on: ARM64
+    runs-on: squidward
     needs: clone-and-commit
     steps:
       - name: Checkout repository at the latest tag
@@ -74,7 +74,7 @@ jobs:
             --push .
 
   build-x64:
-    runs-on: X64
+    runs-on: vultr
     needs: clone-and-commit
     steps:
       - name: Checkout repository at the latest tag
@@ -99,3 +99,19 @@ jobs:
             --tag ghcr.io/${{ github.repository }}:${{ needs.clone-and-commit.outputs.latest_tag }}-x64 \
             --tag ghcr.io/${{ github.repository }}:latest-x64 \
             --push .
+
+  final-commit:
+    needs: [build-arm64, build-x64]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          ref: main
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "baris.dogu@icloud.com"
+          git config --global user.name "bariiss"
+          git add .
+          git diff --staged --quiet || git commit -m "Update main repository after successful builds"
+          git push https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }} main
