@@ -31,6 +31,13 @@ jobs:
           LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
+      - name: Delete the tag if it exists
+        run: |
+          if git rev-parse ${{ env.LATEST_TAG }} >/dev/null 2>&1; then
+            git tag -d ${{ env.LATEST_TAG }}
+            git push origin :refs/tags/${{ env.LATEST_TAG }}
+          fi
+
       - name: Create the same tag in the current repository
         run: |
           git tag ${{ env.LATEST_TAG }}
