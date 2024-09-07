@@ -9,6 +9,7 @@ on:
 jobs:
   clone-and-commit:
     runs-on: self-hosted
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     outputs:
       latest_tag: ${{ steps.get_tag.outputs.LATEST_TAG }}
     steps:
@@ -48,6 +49,7 @@ jobs:
 
   build-arm64:
     runs-on: ARM64
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     needs: clone-and-commit
     steps:
       - name: Checkout repository at the latest tag
@@ -75,6 +77,7 @@ jobs:
 
   build-x64:
     runs-on: gece
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     needs: clone-and-commit
     steps:
       - name: Checkout repository at the latest tag
@@ -101,8 +104,9 @@ jobs:
             --push .
 
   final-commit:
-    needs: [build-arm64, build-x64]
     runs-on: self-hosted
+    needs: [build-arm64, build-x64]
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v3
