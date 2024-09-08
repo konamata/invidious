@@ -1,93 +1,66 @@
-name: Docker Build and Push
+name: Build and Push Docker Images
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
-  build-and-push-x64:
-    runs-on: vultr
-    if: contains(github.event.head_commit.message, '#build') || github.event_name == 'workflow_dispatch'
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        repository: 'iv-org/invidious'
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Log in to the Container registry
-      uses: docker/login-action@v2
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.MY_PAT_TOKEN }}
-
-    - name: Extract metadata (tags, labels) for Docker
-      id: meta
-      uses: docker/metadata-action@v4
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./docker
-        file: ./docker/Dockerfile
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-x64
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-x64
-        platforms: linux/amd64
-
-  build-and-push-arm64:
+  build-arm64:
     runs-on: patrick
-    if: contains(github.event.head_commit.message, '#build') || github.event_name == 'workflow_dispatch'
-    permissions:
-      contents: read
-      packages: write
-
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        repository: 'iv-org/invidious'
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Log in to the Container registry
-      uses: docker/login-action@v2
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.MY_PAT_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
 
-    - name: Extract metadata (tags, labels) for Docker
-      id: meta
-      uses: docker/metadata-action@v4
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Clone Invidious repository
+        run: git clone https://github.com/iv-org/invidious.git
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./docker
-        file: ./docker/Dockerfile.arm64
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-arm64
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64
-        platforms: linux/arm64
+      - name: Build and push arm64 Docker image
+        run: |
+          cd invidious
+          docker buildx create --use
+          docker buildx build --platform linux/arm64 \
+            --file master/docker/Dockerfile.arm64 \
+            --tag ghcr.io/${{ github.repository }}/invidious:arm64-latest \
+            --push .
+
+  build-x64:
+    runs-on: vultr
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
+
+      - name: Clone Invidious repository
+        run: git clone https://github.com/iv-org/invidious.git
+
+      - name: Build and push x64 Docker image
+        run: |
+          cd invidious
+          docker buildx create --use
+          docker buildx build --platform linux/amd64 \
+            --file master/docker/Dockerfile \
+            --tag ghcr.io/${{ github.repository }}/invidious:x64-latest \
+            --push .
