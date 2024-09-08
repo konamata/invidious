@@ -21,12 +21,12 @@ jobs:
       tag_changed: ${{ steps.check_tag.outputs.tag_changed }}
       latest_tag: ${{ steps.get_latest_tag.outputs.LATEST_TAG }}
     steps:
-      - name: Get latest tag from GitHub API
+      - name: Get latest tag from GitHub API and set as output
         id: get_latest_tag
         run: |
           LATEST_TAG=$(curl -s https://api.github.com/repos/iv-org/invidious/releases/latest | jq -r .tag_name)
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_OUTPUT
-      - name: Check if tag has changed
+      - name: Check if tag has changed from previous run and set as output
         id: check_tag
         run: |
           if [ "${{ vars.LATEST_TAG }}" = "${{ steps.get_latest_tag.outputs.LATEST_TAG }}" ]; then
@@ -72,7 +72,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:latest-arm64
-            ghcr.io/${{ github.repository }}:${{ vars.LATEST_TAG }}-arm64
+            ghcr.io/${{ github.repository }}:${{ needs.check-latest-tag.outputs.latest_tag }}-arm64
           build-args: |
             BUILDPLATFORM=linux/arm64
             NO_CACHE=true
@@ -114,7 +114,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:latest-amd64
-            ghcr.io/${{ github.repository }}:${{ vars.LATEST_TAG }}-amd64
+            ghcr.io/${{ github.repository }}:${{ needs.check-latest-tag.outputs.latest_tag }}-amd64
           build-args: |
             BUILDPLATFORM=linux/amd64
             NO_CACHE=true
