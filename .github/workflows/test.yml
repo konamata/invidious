@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   set-latest-tag:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#test')
     outputs:
       tag_changed: ${{ steps.check_tag.outputs.tag_changed }}
@@ -39,8 +39,8 @@ jobs:
 
   build-and-push:
     needs: set-latest-tag
-    runs-on: ubuntu-latest
-    if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#test')) && needs.set-latest-tag.outputs.tag_changed == 'true'
+    runs-on: self-hosted
+    if: needs.set-latest-tag.outputs.tag_changed == 'true'
     steps:
       - name: Build and push Docker images
         run: |
