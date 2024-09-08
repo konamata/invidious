@@ -11,7 +11,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  set-latest-tag:
+    runs-on: self-hosted
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: echo "LATEST_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+
+      - name: Set latest tag to vars
+        run: echo "LATEST_TAG=${{ steps.get_latest_tag.outputs.LATEST_TAG }}" >> $GITHUB_VARS
+
   build-arm64:
+    needs: set-latest-tag
     runs-on: squidward
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     steps:
@@ -39,7 +56,7 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest-arm64
+            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest-arm64
           build-args: |
             BUILDPLATFORM=linux/arm64
             NO_CACHE=true
@@ -48,6 +65,7 @@ jobs:
           provenance: false
 
   build-x64:
+    needs: set-latest-tag
     runs-on: contabo-l
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     steps:

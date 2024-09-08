@@ -1,0 +1,48 @@
+name: Build and Push Docker Images
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  set-latest-tag:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#test')
+    outputs:
+      tag_changed: ${{ steps.check_tag.outputs.tag_changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: echo "LATEST_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+
+      - name: Check if tag has changed
+        id: check_tag
+        run: |
+          if [ "${{ vars.LATEST_TAG }}" = "${{ steps.get_latest_tag.outputs.LATEST_TAG }}" ]; then
+            echo "Tag is unchanged. Skipping further steps."
+            echo "tag_changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Tag has changed. Updating vars."
+            echo "LATEST_TAG=${{ steps.get_latest_tag.outputs.LATEST_TAG }}" >> $GITHUB_VARS
+            echo "tag_changed=true" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push:
+    needs: set-latest-tag
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#test')) && needs.set-latest-tag.outputs.tag_changed == 'true'
+    steps:
+      - name: Build and push Docker images
+        run: |
+          echo "Building and pushing Docker images with tag ${{ vars.LATEST_TAG }}"
+          # Burada Docker build ve push işlemleri yapılır
