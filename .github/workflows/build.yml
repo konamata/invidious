@@ -118,5 +118,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.MY_PAT_TOKEN }}
         run: |
-          gh variable set LATEST_TAG --body "${{ needs.set-latest-tag.outputs.latest_tag }}"
-          echo "Updated LATEST_TAG in vars to ${{ needs.set-latest-tag.outputs.latest_tag }}"
+          LATEST_TAG="${{ needs.set-latest-tag.outputs.latest_tag }}"
+          if [ -z "$LATEST_TAG" ]; then
+            echo "Error: LATEST_TAG is empty"
+            exit 1
+          fi
+          echo "Attempting to set LATEST_TAG to: $LATEST_TAG"
+          if ! gh variable set LATEST_TAG --body "$LATEST_TAG"; then
+            echo "Error: Failed to set LATEST_TAG variable"
+            gh variable list
+            exit 1
+          fi
+          echo "Successfully updated LATEST_TAG in vars to $LATEST_TAG"
