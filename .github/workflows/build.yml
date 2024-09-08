@@ -34,7 +34,7 @@ jobs:
       - name: Get latest tag from GitHub API and set as output
         id: get_latest_tag
         run: |
-          LATEST_TAG=$(curl -s https://api.${{ env.GIT_BASE }}/${{ env.SRC_REPO }}/releases/latest | jq -r '.tag_name')
+          LATEST_TAG=$(curl -s https://api.${{ env.GIT_BASE }}/repos/${{ env.SRC_REPO }}/releases/latest | jq -r '.tag_name')
           if [ -z "$LATEST_TAG" ] || [ "$LATEST_TAG" = "null" ]; then
             echo "Error: Failed to retrieve latest tag"
             exit 1
