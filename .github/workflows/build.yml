@@ -83,7 +83,7 @@ jobs:
   build-x64:
     name: Build for X64
     needs: check-latest-tag
-    runs-on: contabo-l
+    runs-on: vdf
     if: >-
       (github.event_name == 'workflow_dispatch' || 
       contains(github.event.head_commit.message, '#build')) && 
