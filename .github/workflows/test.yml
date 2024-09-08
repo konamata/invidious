@@ -1,9 +1,13 @@
-name: Build and Push Docker Images
+name: Update LATEST_TAG in Vars
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   set-latest-tag:
@@ -13,14 +17,10 @@ jobs:
       tag_changed: ${{ steps.check_tag.outputs.tag_changed }}
       latest_tag: ${{ steps.get_latest_tag.outputs.LATEST_TAG }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Get latest tag
+      - name: Get latest tag from GitHub API
         id: get_latest_tag
         run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LATEST_TAG=$(curl -s https://api.github.com/repos/iv-org/invidious/releases/latest | jq -r .tag_name)
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_OUTPUT
       - name: Check if tag has changed
         id: check_tag
@@ -42,7 +42,6 @@ jobs:
       - name: Build and push Docker images
         run: |
           echo "Building and pushing Docker images with tag ${{ needs.set-latest-tag.outputs.latest_tag }}"
-          # Burada Docker build ve push işlemleri yapılır
 
   update-vars:
     needs: [set-latest-tag, build-and-push]
