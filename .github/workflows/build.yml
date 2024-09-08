@@ -22,6 +22,7 @@ jobs:
     runs-on: self-hosted
     if: >-
       github.event_name == 'workflow_dispatch' || 
+      github.event_name == 'schedule' ||
       contains(github.event.head_commit.message, '#build')
     outputs:
       tag_changed: ${{ steps.check_tag.outputs.tag_changed }}
@@ -50,7 +51,8 @@ jobs:
     runs-on: patrick
     if: >-
       (github.event_name == 'workflow_dispatch' || 
-      contains(github.event.head_commit.message, '#build')) && 
+      contains(github.event.head_commit.message, '#build') ||
+      github.event_name == 'schedule') &&
       needs.check-latest-tag.outputs.tag_changed == 'true'
     steps:
       - name: Checkout repository
@@ -92,7 +94,8 @@ jobs:
     runs-on: vdf
     if: >-
       (github.event_name == 'workflow_dispatch' || 
-      contains(github.event.head_commit.message, '#build')) && 
+      contains(github.event.head_commit.message, '#build') ||
+      github.event_name == 'schedule') &&
       needs.check-latest-tag.outputs.tag_changed == 'true'
     steps:
       - name: Checkout repository
