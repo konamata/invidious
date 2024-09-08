@@ -39,7 +39,7 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest-arm64
+            ghcr.io/${{ github.repository }}:latest-arm64
           build-args: |
             BUILDPLATFORM=linux/arm64
             NO_CACHE=true
@@ -75,7 +75,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest-amd64
+            ghcr.io/${{ github.repository }}:latest-amd64
           build-args: |
             BUILDPLATFORM=linux/amd64
             NO_CACHE=true
