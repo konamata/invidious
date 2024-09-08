@@ -110,7 +110,7 @@ jobs:
           provenance: false
 
   update-vars:
-    needs: [set-latest-tag, build-arm64, build-x64]
+    needs: [build-arm64, build-x64]
     runs-on: self-hosted
     if: always()
     steps:
