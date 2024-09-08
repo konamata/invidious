@@ -39,7 +39,7 @@ jobs:
           fi
 
   build-arm64:
-    name: Build arm64
+    name: Build for ARM64
     needs: check-latest-tag
     runs-on: squidward
     if: >-
@@ -80,7 +80,7 @@ jobs:
           provenance: false
 
   build-x64:
-    name: Build x64
+    name: Build for X64
     needs: check-latest-tag
     runs-on: contabo-l
     if: >-
