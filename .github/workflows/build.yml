@@ -34,7 +34,7 @@ jobs:
       - name: Get latest tag from GitHub API and set as output
         id: get_latest_tag
         run: |
-          LATEST_TAG=$(curl -s https://api.github.com/repos/${{ env.SRC_REPO }}/releases/latest | jq -r '.tag_name')
+          LATEST_TAG=$(curl -s https://api.${{ env.GIT_BASE }}/${{ env.SRC_REPO }}/releases/latest | jq -r '.tag_name')
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_OUTPUT
       - name: Check if tag has changed from previous run and set as output
         id: check_tag
