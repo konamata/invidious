@@ -13,8 +13,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  GIT_BASE: github.com
   SRC_REPO: iv-org/invidious
   DST_REPO: ghcr.io/${{ github.repository }}
+  CONTEXT: ./invidious
+  FILEPATH: docker/Dockerfile
 
 jobs:
   check-latest-tag:
@@ -69,13 +72,13 @@ jobs:
           password: ${{ secrets.MY_PAT_TOKEN }}
       
       - name: Clone Invidious repository
-        run: git clone https://github.com/iv-org/invidious.git
+        run: git clone https://${{ env.GIT_BASE }}/${{ env.SRC_REPO }}.git
       
       - name: Build and push arm64 image
         uses: docker/build-push-action@v5
         with:
-          context: ./invidious
-          file: ./invidious/docker/Dockerfile.arm64
+          context: ${{ env.CONTEXT }}
+          file: ${{ env.CONTEXT }}/${{ env.FILEPATH }}.arm64
           platforms: linux/arm64
           push: true
           tags: |
@@ -112,13 +115,13 @@ jobs:
           password: ${{ secrets.MY_PAT_TOKEN }}
       
       - name: Clone Invidious repository
-        run: git clone https://github.com/iv-org/invidious.git
+        run: git clone https://${{ env.GIT_BASE }}/${{ env.SRC_REPO }}.git
       
       - name: Build and push x64 image
         uses: docker/build-push-action@v5
         with:
-          context: ./invidious
-          file: ./invidious/docker/Dockerfile
+          context: ${{ env.CONTEXT }}
+          file: ${{ env.CONTEXT }}/${{ env.FILEPATH }}
           platforms: linux/amd64
           push: true
           tags: |
