@@ -40,24 +40,10 @@ jobs:
             exit 1
           fi
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_OUTPUT
-
-      - name: Check if LATEST_TAG variable exists and create if not
-        env:
-          GH_TOKEN: ${{ secrets.MY_PAT_TOKEN }}
-        run: |
-          if ! gh variable get LATEST_TAG &>/dev/null; then
-            echo "LATEST_TAG variable does not exist. Creating it..."
-            gh variable set LATEST_TAG --body "${{ steps.get_latest_tag.outputs.LATEST_TAG }}"
-            echo "LATEST_TAG variable created with value: ${{ steps.get_latest_tag.outputs.LATEST_TAG }}"
-          else
-            echo "LATEST_TAG variable already exists"
-          fi
-
       - name: Check if tag has changed from previous run and set as output
         id: check_tag
         run: |
-          CURRENT_TAG=$(gh variable get LATEST_TAG)
-          if [ "$CURRENT_TAG" = "${{ steps.get_latest_tag.outputs.LATEST_TAG }}" ]; then
+          if [ "${{ vars.LATEST_TAG }}" = "${{ steps.get_latest_tag.outputs.LATEST_TAG }}" ]; then
             echo "Tag is unchanged. Skipping further steps."
             echo "tag_changed=false" >> $GITHUB_OUTPUT
           else
