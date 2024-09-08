@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build X Docker Image Automatically
 
 on:
   push:
@@ -13,7 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SOURCE_REPO: iv-org/invidious
+  SRC_REPO: iv-org/invidious
+  DST_REPO: ghcr.io/${{ github.repository }}
 
 jobs:
   check-latest-tag:
@@ -29,7 +30,7 @@ jobs:
       - name: Get latest tag from GitHub API and set as output
         id: get_latest_tag
         run: |
-          LATEST_TAG=$(curl -s https://api.github.com/repos/${{ env.SOURCE_REPO }}/releases/latest | jq -r '.tag_name')
+          LATEST_TAG=$(curl -s https://api.github.com/repos/${{ env.SRC_REPO }}/releases/latest | jq -r '.tag_name')
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_OUTPUT
       - name: Check if tag has changed from previous run and set as output
         id: check_tag
@@ -76,8 +77,8 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest-arm64
-            ghcr.io/${{ github.repository }}:${{ needs.check-latest-tag.outputs.latest_tag }}-arm64
+            ${{ env.DST_REPO }}:latest-arm64
+            ${{ env.DST_REPO }}:${{ needs.check-latest-tag.outputs.latest_tag }}-arm64
           build-args: |
             BUILDPLATFORM=linux/arm64
             NO_CACHE=true
@@ -118,8 +119,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest-amd64
-            ghcr.io/${{ github.repository }}:${{ needs.check-latest-tag.outputs.latest_tag }}-amd64
+            ${{ env.DST_REPO }}:latest-amd64
+            ${{ env.DST_REPO }}:${{ needs.check-latest-tag.outputs.latest_tag }}-amd64
           build-args: |
             BUILDPLATFORM=linux/amd64
             NO_CACHE=true
