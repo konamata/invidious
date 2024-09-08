@@ -51,8 +51,6 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-x64
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-x64
         platforms: linux/amd64
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
 
   build-and-push-arm64:
     runs-on: patrick
@@ -93,5 +91,3 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-arm64
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64
         platforms: linux/arm64
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
