@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  set-latest-tag:
+  check-latest-tag:
     runs-on: self-hosted
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     outputs:
@@ -36,9 +36,9 @@ jobs:
           fi
 
   build-arm64:
-    needs: set-latest-tag
+    needs: check-latest-tag
     runs-on: squidward
-    if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')) && needs.set-latest-tag.outputs.tag_changed == 'true'
+    if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')) && needs.check-latest-tag.outputs.tag_changed == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -73,9 +73,9 @@ jobs:
           provenance: false
 
   build-x64:
-    needs: set-latest-tag
+    needs: check-latest-tag
     runs-on: contabo-l
-    if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')) && needs.set-latest-tag.outputs.tag_changed == 'true'
+    if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')) && needs.check-latest-tag.outputs.tag_changed == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -110,15 +110,15 @@ jobs:
           provenance: false
 
   update-vars:
-    needs: [set-latest-tag, build-x64, build-arm64]
+    needs: [check-latest-tag, build-x64, build-arm64]
     runs-on: self-hosted
-    if: always()
+    if: needs.check-latest-tag.outputs.tag_changed == 'true'
     steps:
       - name: Update LATEST_TAG in vars
         env:
           GH_TOKEN: ${{ secrets.MY_PAT_TOKEN }}
         run: |
-          LATEST_TAG="${{ needs.set-latest-tag.outputs.latest_tag }}"
+          LATEST_TAG="${{ needs.check-latest-tag.outputs.latest_tag }}"
           if [ -z "$LATEST_TAG" ]; then
             echo "Error: LATEST_TAG is empty"
             exit 1
