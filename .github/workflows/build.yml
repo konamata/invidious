@@ -14,23 +14,31 @@ jobs:
   set-latest-tag:
     runs-on: self-hosted
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
+    outputs:
+      tag_changed: ${{ steps.check_tag.outputs.tag_changed }}
+      latest_tag: ${{ steps.get_latest_tag.outputs.LATEST_TAG }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Get latest tag
+      - name: Get latest tag from GitHub API
         id: get_latest_tag
-        run: echo "LATEST_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-
-      - name: Set latest tag to vars
-        run: echo "LATEST_TAG=${{ steps.get_latest_tag.outputs.LATEST_TAG }}" >> $GITHUB_VARS
+        run: |
+          LATEST_TAG=$(curl -s https://api.github.com/repos/iv-org/invidious/releases/latest | jq -r .tag_name)
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_OUTPUT
+      - name: Check if tag has changed
+        id: check_tag
+        run: |
+          if [ "${{ vars.LATEST_TAG }}" = "${{ steps.get_latest_tag.outputs.LATEST_TAG }}" ]; then
+            echo "Tag is unchanged. Skipping further steps."
+            echo "tag_changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Tag has changed. Updating vars."
+            echo "LATEST_TAG=${{ steps.get_latest_tag.outputs.LATEST_TAG }}" >> $GITHUB_ENV
+            echo "tag_changed=true" >> $GITHUB_OUTPUT
+            fi
 
   build-arm64:
     needs: set-latest-tag
     runs-on: squidward
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
+    if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')) && needs.set-latest-tag.outputs.tag_changed == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -67,7 +75,7 @@ jobs:
   build-x64:
     needs: set-latest-tag
     runs-on: contabo-l
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
+    if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')) && needs.set-latest-tag.outputs.tag_changed == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -100,3 +108,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
+
+  update-vars:
+    needs: [set-latest-tag, build-arm64, build-x64]
+    runs-on: self-hosted
+    if: always()
+    steps:
+      - name: Update LATEST_TAG in vars
+        env:
+          GH_TOKEN: ${{ secrets.MY_PAT_TOKEN }}
+        run: |
+          gh variable set LATEST_TAG --body "${{ needs.set-latest-tag.outputs.latest_tag }}"
+          echo "Updated LATEST_TAG in vars to ${{ needs.set-latest-tag.outputs.latest_tag }}"
