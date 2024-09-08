@@ -13,7 +13,7 @@ concurrency:
 jobs:
   set-latest-tag:
     runs-on: self-hosted
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#test')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     outputs:
       tag_changed: ${{ steps.check_tag.outputs.tag_changed }}
       latest_tag: ${{ steps.get_latest_tag.outputs.LATEST_TAG }}
