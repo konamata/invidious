@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   check-latest-tag:
+    name: Check if tag has changed
     runs-on: self-hosted
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     outputs:
@@ -36,6 +37,7 @@ jobs:
           fi
 
   build-arm64:
+    name: Build arm64
     needs: check-latest-tag
     runs-on: squidward
     if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')) && needs.check-latest-tag.outputs.tag_changed == 'true'
@@ -73,6 +75,7 @@ jobs:
           provenance: false
 
   build-x64:
+    name: Build x64
     needs: check-latest-tag
     runs-on: contabo-l
     if: (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')) && needs.check-latest-tag.outputs.tag_changed == 'true'
@@ -109,7 +112,8 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
 
-  update-vars:
+  update-latest-tag:
+    name: Update LATEST_TAG in vars
     needs: [check-latest-tag, build-x64, build-arm64]
     runs-on: self-hosted
     if: needs.check-latest-tag.outputs.tag_changed == 'true'
