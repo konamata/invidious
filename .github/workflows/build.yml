@@ -55,7 +55,7 @@ jobs:
         cache-to: type=gha,mode=max
 
   build-and-push-arm64:
-    runs-on: patrick
+    runs-on: vultr
     if: contains(github.event.head_commit.message, '#build') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
