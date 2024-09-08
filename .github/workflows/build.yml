@@ -42,7 +42,7 @@ jobs:
           provenance: false
 
   build-x64:
-    runs-on: vultr
+    runs-on: contabo-l
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     steps:
       - name: Checkout repository
