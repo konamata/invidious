@@ -13,7 +13,7 @@ env:
 
 jobs:
   build-and-push-x64:
-    runs-on: gece
+    runs-on: vultr
     if: contains(github.event.head_commit.message, '#build') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
@@ -55,7 +55,7 @@ jobs:
         cache-to: type=gha,mode=max
 
   build-and-push-arm64:
-    runs-on: vultr
+    runs-on: patrick
     if: contains(github.event.head_commit.message, '#build') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
