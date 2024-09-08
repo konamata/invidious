@@ -51,7 +51,7 @@ jobs:
   build-arm64:
     name: Build for ARM64
     needs: check-latest-tag
-    runs-on: patrick
+    runs-on: ARM64
     if: >-
       (github.event_name == 'workflow_dispatch' || 
       contains(github.event.head_commit.message, '#build') ||
