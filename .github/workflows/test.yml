@@ -15,16 +15,15 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#test')
     outputs:
       tag_changed: ${{ steps.check_tag.outputs.tag_changed }}
+      latest_tag: ${{ steps.get_latest_tag.outputs.LATEST_TAG }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
       - name: Get latest tag
         id: get_latest_tag
         run: echo "LATEST_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-
       - name: Check if tag has changed
         id: check_tag
         run: |
@@ -44,5 +43,15 @@ jobs:
     steps:
       - name: Build and push Docker images
         run: |
-          echo "Building and pushing Docker images with tag ${{ vars.LATEST_TAG }}"
+          echo "Building and pushing Docker images with tag ${{ needs.set-latest-tag.outputs.latest_tag }}"
           # Burada Docker build ve push işlemleri yapılır
+
+  update-vars:
+    needs: [set-latest-tag, build-and-push]
+    runs-on: self-hosted
+    if: always()
+    steps:
+      - name: Update LATEST_TAG in vars
+        run: |
+          echo "LATEST_TAG=${{ needs.set-latest-tag.outputs.latest_tag }}" >> $GITHUB_VARS
+          echo "Updated LATEST_TAG in vars to ${{ needs.set-latest-tag.outputs.latest_tag }}"
