@@ -13,7 +13,7 @@ concurrency:
 jobs:
   set-latest-tag:
     runs-on: self-hosted
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#test')
     outputs:
       tag_changed: ${{ steps.check_tag.outputs.tag_changed }}
       latest_tag: ${{ steps.get_latest_tag.outputs.LATEST_TAG }}
@@ -33,7 +33,7 @@ jobs:
             echo "Tag has changed. Updating vars."
             echo "LATEST_TAG=${{ steps.get_latest_tag.outputs.LATEST_TAG }}" >> $GITHUB_ENV
             echo "tag_changed=true" >> $GITHUB_OUTPUT
-            fi
+          fi
 
   build-arm64:
     needs: set-latest-tag
@@ -110,7 +110,7 @@ jobs:
           provenance: false
 
   update-vars:
-    needs: [build-arm64, build-x64]
+    needs: [set-latest-tag, build-x64, build-arm64]
     runs-on: self-hosted
     if: always()
     steps:
