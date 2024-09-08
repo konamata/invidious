@@ -27,14 +27,19 @@ jobs:
       - name: Clone Invidious repository
         run: git clone https://github.com/iv-org/invidious.git
       
-      - name: Build and push arm64 Docker image
-        run: |
-          cd invidious
-          docker buildx create --use
-          docker buildx build --platform linux/arm64 \
-            --file docker/Dockerfile.arm64 \
-            --tag ghcr.io/${{ github.repository }}/invidious:arm64-latest \
-            --push .
+      - name: Build and push arm64 image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./invidious
+          file: ./invidious/docker/Dockerfile.arm64
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest-arm64
+          build-args: |
+            BUILDPLATFORM=linux/arm64
+            NO_CACHE=true
+          provenance: false
 
   build-x64:
     runs-on: vultr
@@ -56,11 +61,16 @@ jobs:
       - name: Clone Invidious repository
         run: git clone https://github.com/iv-org/invidious.git
       
-      - name: Build and push x64 Docker image
-        run: |
-          cd invidious
-          docker buildx create --use
-          docker buildx build --platform linux/amd64 \
-            --file docker/Dockerfile \
-            --tag ghcr.io/${{ github.repository }}/invidious:x64-latest \
-            --push .
+      - name: Build and push x64 image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./invidious
+          file: ./invidious/docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest-amd64
+          build-args: |
+            BUILDPLATFORM=linux/amd64
+            NO_CACHE=true
+          provenance: false
