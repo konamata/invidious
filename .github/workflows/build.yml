@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-arm64:
-    runs-on: patrick
+    runs-on: squidward
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build')
     steps:
       - name: Checkout repository
