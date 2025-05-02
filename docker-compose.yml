@@ -20,7 +20,7 @@ services:
         # domain:
         # https_only: false
         # statistics_enabled: false
-        hmac_key: "CHANGE_ME!!"
+        hmac_key: "a9115c0fa340ec6beadca77b2ca9396763a3a34c4156ffa4b862c5c5a6b73937"
     healthcheck:
       test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/trending || exit 1
       interval: 30s
@@ -41,6 +41,3 @@ services:
       POSTGRES_PASSWORD: kemal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-
-volumes:
-  postgresdata:
