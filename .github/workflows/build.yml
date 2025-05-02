@@ -65,11 +65,11 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: patrick
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             dockerfile_suffix: .arm64
           - arch: amd64
-            runner: vdf
+            runner: ubuntu-24.04
             platform: linux/amd64
             dockerfile_suffix: ''
     runs-on: ${{ matrix.runner }}
